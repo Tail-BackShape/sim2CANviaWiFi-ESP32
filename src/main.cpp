@@ -3,11 +3,22 @@
 #include <WiFiUdp.h>
 
 // =======Network settings===========
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
+const char* ssid = "B102_1_RTR";
+const char* password = "33103310";
 
-IPAddress localIp(192,168,12,201);
-unsigned int localPort = 8888;
+/*
+//材力
+IPAddress localIp(192,168,12,201); // Own IP
+IPAddress gateway(192,168,12,1); // Router IP
+IPAddress subnet(255,255,255,0);  // Subnet mask
+*/
+//空力
+IPAddress localIp(192,168,3,100); // Own IP
+IPAddress gateway(192,168,3,254); // Router IP
+IPAddress subnet(255,255,255,0);  // Subnet mask
+
+//IPAddress allowedIP(192, 168, 12, 100); // IP of the device that is allowed to send data
+unsigned int localPort = 8888;   // Port to listen for UDP packets
 
 WiFiUDP Udp;
 
@@ -31,6 +42,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Setup");
 
+  WiFi.config(localIp, gateway, subnet);
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
@@ -45,7 +57,7 @@ void setup() {
 
 void loop() {
   typedef union {
-    float val;
+    int val;
     byte binary[4];
   } value;
   value val1;
@@ -65,8 +77,15 @@ void loop() {
 
         Serial.println(canAddress);
         Serial.println(val1.val);
-        Serial.println(floor(val1.val * sgnfcntDgt));
+        //Serial.println(floor(val1.val * sgnfcntDgt));
     }
+
+    // send a reply, to the IP address
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    for (int i = 0; i <= 3; i++) {
+      Udp.write(val1.binary[i]);
+    }
+    Udp.endPacket();
 
     if (len > 0) {
       packetBuffer[len] = 0;
